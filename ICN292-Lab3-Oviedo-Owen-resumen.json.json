@@ -1,0 +1,345 @@
+{
+  "name": "Resumen Diario -148",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "NnceVcpYfYGfFbwB",
+          "mode": "list",
+          "cachedResultName": "Registro_de_devoluciones_2",
+          "cachedResultUrl": "/projects/fDG5aDop1x8aOQAZ/datatables/NnceVcpYfYGfFbwB"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "fecha_dia",
+              "keyValue": "{{ $now.toFormat('yyyy-MM-dd') }"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        -176
+      ],
+      "id": "a6884ac1-7c6d-42b5-b0c2-ac9ff8ed41a9",
+      "name": "Get row(s)",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "37609017-6315-4c14-86cb-a3f85ce58a01",
+              "leftValue": "={{ $json.id_solicitud }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        -16
+      ],
+      "id": "3eb265c2-2a5b-4762-9067-d22f8f8251de",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "fromEmail": "ooviedo@usm.cl",
+        "toEmail": "ooviedo@usm.cl",
+        "subject": "Resumen",
+        "emailFormat": "text",
+        "text": "RESUMEN DIARIO\nNo se registraron solicitudes durante la jornada.\nSolicitudes: 0\nMonto total: $0\nTasa de aprobación automática: 0%",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        224
+      ],
+      "id": "48eb392d-858d-4a70-949c-8d7e1f0a02e7",
+      "name": "Send an Email",
+      "webhookId": "6c5acf58-5bff-4990-bdae-2c8eb0793cf3"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -16
+      ],
+      "id": "aa259967-0d55-46ed-a81e-80b09c6b7553",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "id_solicitud"
+            },
+            {
+              "aggregation": "sum",
+              "field": "monto"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "ruta",
+        "options": {
+          "outputFormat": "separateItems"
+        }
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        -112
+      ],
+      "id": "bbed08de-946f-4ec9-a85b-4e9ef633c28c",
+      "name": "Summarize por ruta"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "id_solicitud"
+            },
+            {
+              "aggregation": "sum",
+              "field": "monto"
+            },
+            {
+              "aggregation": "sum",
+              "field": " aprobacion_auto"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        -288
+      ],
+      "id": "be27ce0b-e919-471d-bbe8-92a1cd837cec",
+      "name": "Summarize Totales"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "febcb73f-a2d0-42fc-989d-a83dba840edd",
+              "name": "tasa_aprobacion",
+              "value": "={{ $json.count_id_solicitud > 0 ? ($json.sum_aprobacion_auto / $json.count_id_solicitud) * 100 : 0 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        624,
+        -192
+      ],
+      "id": "026d9577-b092-4442-8bc1-6004a11fb619",
+      "name": "Calcular tasa."
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        64
+      ],
+      "id": "c29fe3ec-75b2-4fd3-9fa9-07cfca014c99",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fromEmail": "ooviedo@usm.cl",
+        "toEmail": "ooviedo@usm.cl",
+        "subject": "Resumen",
+        "html": "=RESUMEN DIARIO DE DEVOLUCIONES\nRuta 1: {{ $json.rutas[0].ruta }}\nSolicitudes: {{ $json.rutas[0].count_id_solicitud }}\nMonto: ${{ $json.rutas[0].sum_monto }}\nRuta 2: {{ $json.rutas[1].ruta }}\nSolicitudes: {{ $json.rutas[1].count_id_solicitud }}\nMonto: ${{ $json.rutas[1].sum_monto }}\nRuta 3: {{ $json.rutas[2].ruta }}\nSolicitudes: {{ $json.rutas[2].count_id_solicitud }}\nMonto: ${{ $json.rutas[2].sum_monto }}\nTotal solicitudes: {{ $json.count_id_solicitud }}\nMonto total: ${{ $json.sum_monto }}\nTasa aprobación automática: {{ $json.tasa_aprobacion }}%",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1072,
+        64
+      ],
+      "id": "a83d15b2-c157-47dc-8046-e29c42e4055b",
+      "name": "Send an Email1",
+      "webhookId": "76b5e3a3-c93e-4718-b11a-6e8398e3393f"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -208,
+        80
+      ],
+      "id": "d1145b53-5a6b-4235-a8fc-81cb6a8dafaa",
+      "name": "Inicio Hora enviar"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Summarize Totales",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Summarize por ruta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize por ruta": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Totales": {
+      "main": [
+        [
+          {
+            "node": "Calcular tasa.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular tasa.": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send an Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inicio Hora enviar": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5d120a22-c138-4a20-92ea-226ad271ed72",
+  "meta": {
+    "instanceId": "b2a8b9d9d5400843caa480c694ded75d4a834b55235e1c37e0b5b827953171db"
+  },
+  "nodeGroups": [],
+  "id": "Fl9x385DHilleyNt",
+  "tags": []
+}
