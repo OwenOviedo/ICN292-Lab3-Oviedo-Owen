@@ -1,1 +1,4 @@
 # ICN292-Lab3-Oviedo-Owen
+
+RUT: 224711484
+S = 148
